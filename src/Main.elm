@@ -1,20 +1,65 @@
 module Main exposing (main)
 
+import Api.Object exposing (Link(..))
+import Api.Object.Link as Link
+import Api.Query as Query
+import Api.Scalar as Scalar
 import Browser
-import Html exposing (div, text)
+import Element exposing (Element, el, text)
+import Graphql.Document as Document
+import Graphql.Http
+import Graphql.Operation exposing (RootQuery)
+import Graphql.SelectionSet as SelectionSet exposing (SelectionSet)
+import RemoteData exposing (RemoteData)
+
+
+endpoint : String
+endpoint =
+    "http://localhost:4000/graphql"
+
+
+type alias BaggyLink =
+    { id : Scalar.Id
+    , hash : Maybe String
+    , url : Maybe String
+    }
+
+
+type alias Response =
+    Maybe BaggyLink
+
+
+getLinkQuery : SelectionSet Response RootQuery
+getLinkQuery =
+    Query.link { id = Scalar.Id "TGluazo2" } linkSelection
+
+
+linkSelection : SelectionSet BaggyLink Link
+linkSelection =
+    SelectionSet.map3 BaggyLink
+        Link.id
+        Link.hash
+        Link.url
+
+
+fetchLink : Cmd Msg
+fetchLink =
+    getLinkQuery
+        |> Graphql.Http.queryRequest endpoint
+        |> Graphql.Http.send (RemoteData.fromResult >> GotResponse)
 
 
 
 -- MAIN
 
 
-main : Program () Model Msg
+main : Program Flags Model Msg
 main =
     Browser.document
         { init = init
         , subscriptions = subscriptions
         , update = update
-        , view = view
+        , view = view (Document.serializeQuery getLinkQuery)
         }
 
 
@@ -23,7 +68,7 @@ main =
 
 
 type alias Model =
-    {}
+    RemoteData (Graphql.Http.Error Response) Response
 
 
 
@@ -31,12 +76,23 @@ type alias Model =
 
 
 type Msg
-    = NoOp
+    = GotResponse Model
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
-update _ model =
-    ( model, Cmd.none )
+update msg model =
+    case msg of
+        GotResponse response ->
+            ( response, Cmd.none )
+
+
+type alias Flags =
+    ()
+
+
+init : Flags -> ( Model, Cmd Msg )
+init _ =
+    ( RemoteData.Loading, fetchLink )
 
 
 
@@ -48,21 +104,17 @@ subscriptions _ =
     Sub.none
 
 
-init : () -> ( Model, Cmd Msg )
-init _ =
-    ( {}, Cmd.none )
-
-
 
 -- VIEW
 
 
-view : Model -> Browser.Document Msg
-view _ =
+view : String -> Model -> Browser.Document Msg
+view queryString model =
     { title = "Bagheera"
-    , body = [ viewGreeting ]
+    , body = [ Element.layout [] viewGreeting ]
     }
 
 
+viewGreeting : Element msg
 viewGreeting =
-    div [] [ text "Hello hans" ]
+    el [] (text "hello hansy")

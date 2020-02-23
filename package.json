@@ -1,0 +1,11 @@
+{
+  "name": "Bagheera",
+  "version": "0.1.0",
+  "description": "URL Shortener",
+  "main": "elm.js",
+  "author": "@hansjhoffman",
+  "license": "MIT",
+  "devDependencies": {
+    "@dillonkearns/elm-graphql": "^4.0.1"
+  }
+}
