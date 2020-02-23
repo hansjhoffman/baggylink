@@ -1,5 +1,13 @@
+# dependencies
 elm-stuff
 node_modules
+
+# generated files
 src/Api
 
+# misc
 .idea
+.DS_Store
+.env*
+yarn-debug.log*
+yarn-error.log*
