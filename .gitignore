@@ -4,6 +4,7 @@ node_modules
 
 # generated files
 src/Api
+public/app.js
 
 # misc
 .idea

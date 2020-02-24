@@ -9,7 +9,7 @@ import Element exposing (Element, el, text)
 import Graphql.Http
 import Graphql.Operation exposing (RootQuery)
 import Graphql.SelectionSet as SelectionSet exposing (SelectionSet)
-import RemoteData exposing (RemoteData(..), WebData)
+import RemoteData exposing (RemoteData(..))
 
 
 endpoint : String
@@ -28,9 +28,9 @@ type alias LinkResponse =
     Maybe BaggyLink
 
 
-getLinkQuery : SelectionSet LinkResponse RootQuery
-getLinkQuery =
-    Query.link { id = Scalar.Id "TGluazo2" } linkSelection
+query : Scalar.Id -> SelectionSet LinkResponse RootQuery
+query id =
+    Query.link { id = id } linkSelection
 
 
 linkSelection : SelectionSet BaggyLink Link
@@ -43,7 +43,8 @@ linkSelection =
 
 fetchLink : Cmd Msg
 fetchLink =
-    getLinkQuery
+    Scalar.Id "TGluazo2"
+        |> query
         |> Graphql.Http.queryRequest endpoint
         |> Graphql.Http.send (RemoteData.fromResult >> GotResponse)
 
@@ -67,7 +68,7 @@ main =
 
 
 type alias Model =
-    { link : WebData BaggyLink }
+    RemoteData (Graphql.Http.Error LinkResponse) LinkResponse
 
 
 
@@ -75,17 +76,19 @@ type alias Model =
 
 
 type Msg
-    = GotResponse ( WebData BaggyLink )
+    = GotResponse Model
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         GotResponse response ->
-            ( { model | link = response } , Cmd.none )
+            ( response, Cmd.none )
+
 
 
 -- INIT
+
 
 type alias Flags =
     ()
@@ -93,7 +96,7 @@ type alias Flags =
 
 init : Flags -> ( Model, Cmd Msg )
 init _ =
-    ( { link = Loading } , fetchLink )
+    ( NotAsked, fetchLink )
 
 
 
@@ -118,16 +121,15 @@ view model =
 
 viewLink : Model -> Element msg
 viewLink model =
-    case model.link of
+    case model of
         NotAsked ->
             el [] (text "NotAsked")
 
         Loading ->
-            el []  (text "Loading...")
+            el [] (text "Loading...")
 
-        Failure err ->
-            el [] (text "Failed... [pattern match error.message & error.details here]")
+        Failure httpError ->
+            el [] (text "Failed!")
 
         Success link ->
-            el [] (text (Maybe.withDefault "WTF" <| link.url))
-
+            el [] (text "link data goes here")
